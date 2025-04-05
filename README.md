@@ -1,12 +1,60 @@
-# React + Vite
+# TTRPG Website
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+This is a web-based tabletop role-playing game (TTRPG) interface built using **React**, **Vite**, and **Node.js**, with Python integration for backend logic and automation.
 
-Currently, two official plugins are available:
+## Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- Dynamic character sheets
+- Dice rolling components
+- Real-time socket communication
+- Modular React components
+- Clean and responsive UI
 
-## Expanding the ESLint configuration
+## Tech Stack
 
-If you are developing a production application, we recommend using TypeScript and enable type-aware lint rules. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+- **Frontend**: React + Vite
+- **Backend**: Node.js (socket server)
+- **Python**: for automation or processing logic
+- **Others**: VS Code, Git, GitHub
+
+## Setup
+
+1. Clone the repo:
+   ```bash
+   git clone https://github.com/evrimakgul/ttrpg_website.git
+Install dependencies:
+
+bash
+Copy
+Edit
+npm install
+Run dev server:
+
+bash
+Copy
+Edit
+npm run dev
+Activate Python venv (if used):
+
+bash
+Copy
+Edit
+./venv/Scripts/activate
+Folder Structure
+csharp
+Copy
+Edit
+website/
+├── public/
+├── server/           # Node.js backend
+├── src/
+│   ├── components/   # React components
+│   ├── pages/        # Page-level views
+│   └── assets/
+├── venv/             # Python virtual environment
+Todo
+ Add user auth
+
+ Enhance real-time DM-player interactions
+
+ Export/import campaign data
