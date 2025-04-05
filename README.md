@@ -22,28 +22,26 @@ This is a web-based tabletop role-playing game (TTRPG) interface built using **R
 1. Clone the repo:
    ```bash
    git clone https://github.com/evrimakgul/ttrpg_website.git
-   
-Install dependencies:
+   ```
 
-bash
-Copy
-Edit
-npm install
-Run dev server:
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
 
-bash
-Copy
-Edit
-npm run dev
-Activate Python venv (if used):
+3. Run dev server:
+   ```bash
+   npm run dev
+   ```
 
-bash
-Copy
-Edit
-./venv/Scripts/activate
+4. Activate Python venv (if used):
+   ```bash
+   ./venv/Scripts/activate
+   ```
 
-Folder Structure
+## Folder Structure
 
+```
 website/
 ├── public/
 ├── server/           # Node.js backend
@@ -52,12 +50,10 @@ website/
 │   ├── pages/        # Page-level views
 │   └── assets/
 ├── venv/             # Python virtual environment
+```
 
+## Todo
 
-Todo
-
- Add user auth
-
- Enhance real-time DM-player interactions
-
- Export/import campaign data
+- [ ] Add user auth  
+- [ ] Enhance real-time DM-player interactions  
+- [ ] Export/import campaign data
