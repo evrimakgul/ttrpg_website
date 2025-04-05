@@ -16,7 +16,7 @@ export default class EditableField extends Component {
     return (
       <input
         type="number"
-        className="w-12 text-center p-1 text-sm border border-gray-300 rounded"
+        className="w-10 text-center px-1 py-0.5 text-sm border border-gray-300 rounded"
         value={this.state.value}
         onChange={this.handleChange}
       />
