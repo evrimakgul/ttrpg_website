@@ -22,6 +22,7 @@ This is a web-based tabletop role-playing game (TTRPG) interface built using **R
 1. Clone the repo:
    ```bash
    git clone https://github.com/evrimakgul/ttrpg_website.git
+   
 Install dependencies:
 
 bash
@@ -40,10 +41,9 @@ bash
 Copy
 Edit
 ./venv/Scripts/activate
+
 Folder Structure
-csharp
-Copy
-Edit
+
 website/
 ├── public/
 ├── server/           # Node.js backend
@@ -52,7 +52,10 @@ website/
 │   ├── pages/        # Page-level views
 │   └── assets/
 ├── venv/             # Python virtual environment
+
+
 Todo
+
  Add user auth
 
  Enhance real-time DM-player interactions
