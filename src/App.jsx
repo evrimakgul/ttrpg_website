@@ -5,6 +5,10 @@ import DMPage from "./pages/DMPage";
 import PlayerPage from "./pages/PlayerPage";
 import SelectGame from "./pages/SelectGame";
 import CreateCharacter from "./pages/CreateCharacter";
+import HostGame from "./pages/HostGame";
+import SelectRuleset from "./pages/SelectRuleset";
+import GameDashboard from "./pages/GameDashboard";
+import CreateRuleset from "./pages/CreateRuleset";
 
 function App() {
   return (
@@ -17,6 +21,14 @@ function App() {
           <Route path="/sheet" element={<CharacterSheet />} />
           <Route path="/select-game" element={<SelectGame />} />
           <Route path="/create-character" element={<CreateCharacter />} />
+          <Route path="/host-game" element={<HostGame />} />
+          <Route path="/select-ruleset" element={<SelectRuleset />} />
+          <Route path="/dm/game-dashboard" element={<GameDashboard />} />
+          <Route path="/create-ruleset" element={<CreateRuleset />} />
+
+
+
+
           </Routes>
       </div>
     </BrowserRouter>

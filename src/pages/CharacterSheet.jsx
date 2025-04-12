@@ -1,6 +1,7 @@
 import { useState } from "react";
 import DiceRoller from "../components/DiceRoller";
 import EditableField from "../components/EditableField";
+import { useLocation } from "react-router-dom";
 
 const attributes = {
   Physical: ["Strength", "Dexterity", "Stamina"],
@@ -23,6 +24,8 @@ export default function CharacterSheet() {
     return fields;
   });
 
+  const location = useLocation();
+  const character = location.state?.character;
   const update = (field, val) => {
     setValues((prev) => ({ ...prev, [field]: val }));
   };
@@ -35,7 +38,36 @@ export default function CharacterSheet() {
 
   return (
     <div className="max-w-6xl mx-auto mt-10 bg-white p-6 rounded-2xl shadow-md text-sm">
+      <div className="flex justify-start gap-2 mb-6">
+        <button
+          onClick={() => window.location.href = "/"}
+          className="px-4 py-1 bg-gray-200 rounded"
+        >
+          🏠 Home
+        </button>
+        <button
+          onClick={() => window.history.back()}
+          className="px-4 py-1 bg-gray-200 rounded"
+        >
+          ⬅ Back
+        </button>
+      </div>
       <h2 className="text-xl font-bold mb-4 text-center">Character Sheet</h2>
+      {character && (
+        <div className="border p-4 rounded-xl mb-6 text-sm bg-gray-50">
+          <h3 className="text-md font-semibold mb-2">Character Info</h3>
+          <ul className="grid grid-cols-2 gap-x-6 gap-y-1">
+            <li><strong>Name:</strong> {character.name}</li>
+            <li><strong>Archetype:</strong> {character.archetype}</li>
+            <li><strong>Background:</strong> {character.background}</li>
+            <li><strong>Age:</strong> {character.age}</li>
+            <li><strong>Race:</strong> {character.race}</li>
+            <li><strong>Gender:</strong> {character.gender}</li>
+            <li><strong>Affiliation:</strong> {character.affiliation}</li>
+            <li><strong>Notes:</strong> {character.notes}</li>
+          </ul>
+        </div>
+      )}
 
       {/* HEADER */}
       <div className="border p-4 rounded-xl mb-6">
