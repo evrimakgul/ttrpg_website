@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 
-export default function CreateRuleset() {
+export default function RulesetBuilder() {
   const navigate = useNavigate();
 
   const [rulesetName, setRulesetName] = useState("");
