@@ -8,7 +8,7 @@ import CreateCharacter from "./pages/CreateCharacter";
 import HostGame from "./pages/HostGame";
 import SelectRuleset from "./pages/SelectRuleset";
 import GameDashboard from "./pages/GameDashboard";
-import CreateRuleset from "./pages/CreateRuleset";
+import RulesetBuilder from "./pages/RulesetBuilder";
 
 function App() {
   return (
@@ -24,7 +24,7 @@ function App() {
           <Route path="/host-game" element={<HostGame />} />
           <Route path="/select-ruleset" element={<SelectRuleset />} />
           <Route path="/dm/game-dashboard" element={<GameDashboard />} />
-          <Route path="/create-ruleset" element={<CreateRuleset />} />
+          <Route path="/build-ruleset" element={<RulesetBuilder />} />
 
 
 

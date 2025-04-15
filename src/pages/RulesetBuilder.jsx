@@ -1,114 +1,71 @@
-import { useNavigate } from "react-router-dom";
+// src/components/RulesetBuilder.jsx (REPLACED CONTENT!)
+import { useNavigate, useLocation } from "react-router-dom";
 import { useState } from "react";
 
 export default function RulesetBuilder() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const gameId = location.state?.gameId; // Get gameId from previous page
 
   const [rulesetName, setRulesetName] = useState("");
-  const [attributes, setAttributes] = useState(["Strength", "Dexterity"]);
-  const [skills, setSkills] = useState(["Stealth", "Insight"]);
 
-  const handleSubmit = () => {
-    if (!rulesetName.trim()) {
-      alert("Ruleset must have a name.");
+  const handleCreate = () => {
+    const trimmedName = rulesetName.trim();
+    if (!trimmedName) {
+      alert("Please enter a ruleset name.");
       return;
     }
-    // Later: save to backend
-    navigate("/dm/game-dashboard");
-  };
 
-  const handleAdd = (list, setList) => {
-    setList([...list, ""]);
-  };
+    // 1. Create a minimal ruleset object
+    const newRuleset = {
+      id: Date.now().toString(), // Simple unique ID
+      name: trimmedName,
+      // Add empty arrays if your GameDashboard expects them
+      groups: [],
+      counters: [],
+    };
 
-  const handleChange = (index, value, list, setList) => {
-    const updated = [...list];
-    updated[index] = value;
-    setList(updated);
+    // 2. Save the new ruleset to localStorage
+    const existingRulesets = JSON.parse(localStorage.getItem("rulesets") || "[]");
+    localStorage.setItem("rulesets", JSON.stringify([...existingRulesets, newRuleset]));
+
+    // 3. Link ruleset name to the game in localStorage
+    if (gameId) {
+      const games = JSON.parse(localStorage.getItem("games") || "[]");
+      const updatedGames = games.map((game) =>
+        game.id === gameId ? { ...game, ruleset: newRuleset.name } : game
+      );
+      localStorage.setItem("games", JSON.stringify(updatedGames));
+    }
+
+    // 4. Go to the game dashboard
+    navigate("/dm/game-dashboard", { state: { gameId: gameId } });
   };
 
   return (
-    <div className="max-w-2xl mx-auto mt-10 bg-white p-6 rounded-2xl shadow text-sm">
-      {/* Nav */}
+    <div className="max-w-md mx-auto mt-10 bg-white p-6 rounded-2xl shadow text-sm">
+      {/* Navigation */}
       <div className="flex justify-start gap-2 mb-6">
-        <button
-          onClick={() => navigate("/")}
-          className="px-4 py-1 bg-gray-200 rounded"
-        >
-          🏠 Home
-        </button>
-        <button
-          onClick={() => navigate(-1)}
-          className="px-4 py-1 bg-gray-200 rounded"
-        >
-          ⬅ Back
-        </button>
+        <button onClick={() => navigate("/")} className="px-4 py-1 bg-gray-200 rounded">🏠 Home</button>
+        <button onClick={() => navigate(-1)} className="px-4 py-1 bg-gray-200 rounded">⬅ Back</button>
       </div>
 
       {/* Title */}
-      <h2 className="text-lg font-bold text-center mb-6">Create Custom Ruleset</h2>
+      <h2 className="text-lg font-bold text-center mb-6">Create New Ruleset</h2>
 
-      {/* Ruleset Name */}
+      {/* Input */}
       <div className="mb-4">
         <label className="block text-sm font-medium mb-1">Ruleset Name</label>
         <input
           value={rulesetName}
           onChange={(e) => setRulesetName(e.target.value)}
           className="w-full border p-2 rounded"
+          placeholder="Enter ruleset name"
         />
       </div>
 
-      {/* Attributes */}
-      <div className="mb-6">
-        <div className="flex justify-between items-center mb-1">
-          <label className="block text-sm font-medium">Attributes</label>
-          <button
-            onClick={() => handleAdd(attributes, setAttributes)}
-            className="text-blue-600 text-xs"
-          >
-            ➕ Add Attribute
-          </button>
-        </div>
-        <div className="space-y-2">
-          {attributes.map((attr, idx) => (
-            <input
-              key={idx}
-              value={attr}
-              onChange={(e) => handleChange(idx, e.target.value, attributes, setAttributes)}
-              className="w-full border p-2 rounded"
-            />
-          ))}
-        </div>
-      </div>
-
-      {/* Skills */}
-      <div className="mb-6">
-        <div className="flex justify-between items-center mb-1">
-          <label className="block text-sm font-medium">Skills</label>
-          <button
-            onClick={() => handleAdd(skills, setSkills)}
-            className="text-blue-600 text-xs"
-          >
-            ➕ Add Skill
-          </button>
-        </div>
-        <div className="space-y-2">
-          {skills.map((skill, idx) => (
-            <input
-              key={idx}
-              value={skill}
-              onChange={(e) => handleChange(idx, e.target.value, skills, setSkills)}
-              className="w-full border p-2 rounded"
-            />
-          ))}
-        </div>
-      </div>
-
-      {/* Submit */}
-      <button
-        onClick={handleSubmit}
-        className="w-full bg-purple-100 py-2 rounded"
-      >
+      {/* Button */}
+      <button onClick={handleCreate} className="w-full bg-purple-100 py-2 rounded">
         ✅ Create Ruleset
       </button>
     </div>
