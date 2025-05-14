@@ -22,22 +22,37 @@ export default function GameDashboard() {
     localStorage.setItem("games", JSON.stringify(updatedGames));
   };
 
+  const handleDeleteGame = () => {
+    if (window.confirm("Are you sure you want to delete this game? This action cannot be undone.")) {
+      const updatedGames = storedGames.filter((g) => g.id !== gameId);
+      localStorage.setItem("games", JSON.stringify(updatedGames));
+      navigate("/dm");
+    }
+  };
 
   return (
     <div className="max-w-4xl mx-auto mt-10 bg-white p-6 rounded-2xl shadow text-sm">
-      {/* Top Nav */}
-      <div className="flex justify-start gap-2 mb-6">
+      {/* Top Nav and Delete Button */}
+      <div className="flex justify-between items-center mb-6">
+        <div className="flex gap-2">
+          <button
+            onClick={() => navigate("/")}
+            className="px-4 py-1 bg-gray-200 rounded"
+          >
+            🏠 Home
+          </button>
+          <button
+            onClick={() => navigate(-1)}
+            className="px-4 py-1 bg-gray-200 rounded"
+          >
+            ⬅ Back
+          </button>
+        </div>
         <button
-          onClick={() => navigate("/")}
-          className="px-4 py-1 bg-gray-200 rounded"
+          onClick={handleDeleteGame}
+          className="px-4 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200"
         >
-          🏠 Home
-        </button>
-        <button
-          onClick={() => navigate(-1)}
-          className="px-4 py-1 bg-gray-200 rounded"
-        >
-          ⬅ Back
+          🗑️ Delete Your Game
         </button>
       </div>
 
