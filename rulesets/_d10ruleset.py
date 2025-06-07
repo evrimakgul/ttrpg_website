@@ -1,3 +1,4 @@
+# %%
 # -*- coding: utf-8 -*-
 """d10ruleset.ipynb
 
@@ -13,6 +14,7 @@ import random
 def roll_dice(number: int, sides: int) -> int:
     """Rolls dice and returns the total."""
     return sum(random.randint(1, sides) for _ in range(number))
+
 
 class Actions:
     def __init__(self):
@@ -192,6 +194,7 @@ class CharacterSheet:
         """Checks if the character has passed their turn this round."""
         return self._has_passed_turn
 
+
 class TurnManager:
     def __init__(self):
         self.participants: List[CharacterSheet] = []
@@ -357,6 +360,7 @@ class TurnManager:
         self.participants = []
         self.turn_queue = []
 
+
 # Example Usage:
 if __name__ == "__main__":
     my_character = CharacterSheet("Brave Sir Robin")
@@ -401,89 +405,107 @@ if __name__ == "__main__":
 
 
 
+# %%
 
+class RulesetManager:
+    def __init__(self):
+        self.rulesets: Dict[str, Any] = {}
 
+    def add_ruleset(self, name: str, ruleset: Any):
+        if name in self.rulesets:
+            print(f"Ruleset '{name}' already exists.")
+            return
+        self.rulesets[name] = ruleset
+        print(f"Ruleset '{name}' added.")
 
+    def get_ruleset(self, name: str) -> Any | None:
+        return self.rulesets.get(name)
 
+    def list_rulesets(self) -> List[str]:
+        return list(self.rulesets.keys())
 
-class Rule:
-    def __init__(self, name: str, description: str, condition: Callable[[Dict[str, Any]], bool], action: Callable[[Dict[str, Any]], None]):
-        self.name = name
-        self.description = description
-        self.condition = condition
-        self.action = action
-
-    def applies(self, context: Dict[str, Any]) -> bool:
-        return self.condition(context)
-
-    def execute(self, context: Dict[str, Any]) -> None:
-        self.action(context)
-
-# from rulesets.rule import Rule
 
 class Argo:
     def __init__(self):
-        self.rules = []
-
-    def add_rule(self, rule: Rule) -> None:
-        self.rules.append(rule)
-
-    def evaluate(self, context):
-        for rule in self.rules:
-            if rule.applies(context):
-                rule.execute(context)
-
-    def get_rules(self):
-        return [{"name": rule.name, "description": rule.description} for rule in self.rules]
+        self.actions = Actions()
+        self.abilities = Abilities()
+        self.skills = Skills()
+        self.character_sheet = CharacterSheet("Default Character") # Example instantiation
+        self.turn_manager = TurnManager()
 
 
 
-# D10 System Rule
-def can_roll_d10(context):
-    # Requires 'dice_pool' and 'difficulty' in context
-    return "dice_pool" in context and "difficulty" in context
 
-def d10_action(context):
-    dice_pool = context["dice_pool"]
-    difficulty = context["difficulty"]
-    rolls = [random.randint(1, 10) for _ in range(dice_pool)]
-    successes = sum(1 for roll in rolls if roll >= difficulty)
-    print(f"Rolls: {rolls}")
-    print(f"Successes (≥{difficulty}): {successes}")
-    context["rolls"] = rolls
-    context["successes"] = successes
 
-d10_rule = Rule(
-    name="D10Roll",
-    description="Rolls a pool of d10 dice and counts successes.",
-    condition=can_roll_d10,
-    action=d10_action
-)
+# %%
 
 # Example usage:
 if __name__ == "__main__":
-    # Example rule: If user is admin, print a message
-    def is_admin(context):
-        return context.get("user_role") == "admin"
-
-    def admin_action(context):
-        print("Admin access granted.")
-
-    admin_rule = Rule(
-        name="AdminAccess",
-        description="Grants access if user is admin.",
-        condition=is_admin,
-        action=admin_action
-    )
-
-    ruleset = Argo()
-    ruleset.add_rule(admin_rule)
-    ruleset.add_rule(d10_rule)
-
-    # Simulate context for a d10 roll
-    user_context = {
-        "dice_pool": 5,      # Number of dice to roll
-        "difficulty": 7      # Minimum value for a success
-    }
-    ruleset.evaluate(user_context)
-
+    # Create a RulesetManager
+    ruleset_manager = RulesetManager()
+    
+    # Create an Argo ruleset instance
+    argo_ruleset = Argo()
+    
+    # Add the Argo ruleset to the RulesetManager
+    ruleset_manager.add_ruleset("Argo", argo_ruleset)
+    
+    # List available rulesets
+    print("\nAvailable Rulesets:")
+    rulesets = ruleset_manager.list_rulesets()
+    for ruleset_name in rulesets:
+        print(f"- {ruleset_name}")
+    
+    # Retrieve the Argo ruleset from the RulesetManager
+    retrieved_argo = ruleset_manager.get_ruleset("Argo")
+    if retrieved_argo:
+        print("\nSuccessfully retrieved Argo ruleset")
+        
+        # Create a character using the retrieved Argo ruleset's components
+        character_name = "Brave Sir Robin"
+        print(f"\nCreating character '{character_name}' using Argo ruleset")
+        
+        # Use the character sheet from the Argo ruleset as a template
+        # In a real implementation, you might clone this or create a new one
+        my_character = CharacterSheet(character_name)
+        
+        print("\nInitial Abilities:")
+        my_character.abilities.display()
+        
+        print("\nCalculating AP:")
+        my_character.calculate_action_points()
+        
+        print("\nAttempting Actions:")
+        my_character.actions.perform_action("Attack")
+        my_character.actions.perform_action("Move", distance=10) # Cost 5 (10/2)
+        my_character.actions.perform_action("Defense")
+        
+        print("\nModifying Strength:")
+        my_character.abilities.modify_ability("Strength", 3)
+        
+        print("\nRecalculating AP:")
+        my_character.calculate_action_points()
+        
+        print("\nAdding Skills:")
+        my_character.skills.add_skill("Stealth", 2)
+        my_character.skills.add_skill("Speech", 3)
+        my_character.skills.display()
+        
+        # Example of using the TurnManager from the Argo ruleset
+        print("\nDemonstrating combat with TurnManager:")
+        combat_manager = retrieved_argo.turn_manager
+        
+        # Create another character for the combat demonstration
+        enemy = CharacterSheet("Evil Knight")
+        enemy.abilities.modify_ability("Strength", 2)
+        enemy.calculate_action_points()
+        
+        # Activate combat with both characters
+        combat_manager.activate_combat([my_character, enemy])
+        
+        # Perform an action with the current player
+        combat_manager.perform_action_for_current_player("Attack")
+        
+        # End the combat
+        combat_manager.end_combat()
+        print("\nCombat demonstration completed")
