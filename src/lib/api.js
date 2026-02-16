@@ -1,6 +1,13 @@
 import { supabase } from "./supabase";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3001";
+const API_BASE_URL = (
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:3001"
+).replace(/\/+$/, "");
+
+function buildApiUrl(path) {
+  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+  return `${API_BASE_URL}${normalizedPath}`;
+}
 
 async function getAccessToken() {
   const {
@@ -39,7 +46,7 @@ async function doRequest(path, { method, body, headers, token }) {
     finalHeaders.Authorization = `Bearer ${token}`;
   }
 
-  const response = await fetch(`${API_BASE_URL}${path}`, {
+  const response = await fetch(buildApiUrl(path), {
     method,
     headers: finalHeaders,
     body: body ? JSON.stringify(body) : undefined,
