@@ -25,3 +25,11 @@ dist-ssr
 
 venv/
 __pycache__/
+
+# Environment secrets
+.env
+.env.*
+server/.env
+server/.env.*
+!.env.example
+!server/.env.example

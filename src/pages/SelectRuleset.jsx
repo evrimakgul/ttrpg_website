@@ -1,77 +1,91 @@
-import { useNavigate } from "react-router-dom";
 import { useState } from "react";
-import { useLocation } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
+import { apiFetch } from "../lib/api";
+
+const DEFAULT_RULESETS = ["Default Ruleset", "DnD 5e", "Vampire V20"];
 
 export default function SelectRuleset() {
   const navigate = useNavigate();
+  const { gameId } = useParams();
   const [showList, setShowList] = useState(false);
-  const location = useLocation();
-  const gameId = location.state?.gameId;
+  const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
 
-  const handleExistingSelection = (rulesetName) => {
-    const storedGames = JSON.parse(localStorage.getItem("games") || "[]");
-    const updatedGames = storedGames.map((game) =>
-      game.id === gameId ? { ...game, ruleset: rulesetName } : game
-    );
-    localStorage.setItem("games", JSON.stringify(updatedGames));
-  
-    navigate("/dm/game-dashboard", { state: { gameId } });
+  const handleExistingSelection = async (rulesetName) => {
+    if (!gameId) return;
+    setError("");
+    setSaving(true);
+
+    try {
+      await apiFetch(`/api/games/${gameId}`, {
+        method: "PATCH",
+        body: { ruleset_name: rulesetName },
+      });
+      navigate(`/dm/game-dashboard/${gameId}`);
+    } catch (err) {
+      setError(err.message || "Could not update ruleset.");
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
-    <div className="max-w-md mx-auto mt-10 bg-white p-6 rounded-2xl shadow text-sm">
-      {/* Top Nav */}
-      <div className="flex justify-start gap-2 mb-6">
+    <div className="mx-auto mt-10 max-w-md rounded-2xl bg-white p-6 text-sm shadow">
+      <div className="mb-6 flex justify-start gap-2">
         <button
           onClick={() => navigate("/")}
-          className="px-4 py-1 bg-gray-200 rounded"
+          className="rounded bg-gray-200 px-4 py-1"
+          type="button"
         >
-          🏠 Home
+          Home
         </button>
         <button
           onClick={() => navigate(-1)}
-          className="px-4 py-1 bg-gray-200 rounded"
+          className="rounded bg-gray-200 px-4 py-1"
+          type="button"
         >
-          ⬅ Back
+          Back
         </button>
       </div>
 
-      {/* Heading */}
-      <h2 className="text-lg font-bold text-center mb-6">Select Ruleset</h2>
+      <h2 className="mb-6 text-center text-lg font-bold">Select Ruleset</h2>
 
-      {/* Option 1: Existing Ruleset */}
       <div className="mb-6">
         <button
           onClick={() => setShowList(!showList)}
-          className="w-full bg-blue-100 py-2 rounded"
+          className="w-full rounded bg-blue-100 py-2 disabled:opacity-60"
+          disabled={saving}
+          type="button"
         >
-          📂 Select Existing Ruleset
+          Select Existing Ruleset
         </button>
 
         {showList && (
           <div className="mt-4 space-y-2">
-            {["Default Ruleset", "DnD 5e", "Vampire V20"].map((r) => (
+            {DEFAULT_RULESETS.map((ruleset) => (
               <button
-                key={r}
-                onClick={() => handleExistingSelection(r)}
-                className="w-full text-left px-3 py-2 border rounded hover:bg-blue-50"
+                key={ruleset}
+                onClick={() => handleExistingSelection(ruleset)}
+                className="w-full rounded border px-3 py-2 text-left hover:bg-blue-50"
+                disabled={saving}
+                type="button"
               >
-                {r}
+                {ruleset}
               </button>
             ))}
           </div>
         )}
       </div>
 
-      {/* Option 2: Create New Ruleset */}
-      <div>
-        <button
-          onClick={() => navigate("/create-ruleset")}
-          className="w-full bg-purple-100 py-2 rounded"
-        >
-          ✏️ Set Up a New Ruleset
-        </button>
-      </div>
+      <button
+        onClick={() => navigate(`/create-ruleset?gameId=${gameId || ""}`)}
+        className="w-full rounded bg-purple-100 py-2"
+        type="button"
+      >
+        Set Up a New Ruleset
+      </button>
+
+      {error && <p className="mt-4 text-sm text-red-600">{error}</p>}
     </div>
   );
 }

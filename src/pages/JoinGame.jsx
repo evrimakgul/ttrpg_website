@@ -13,8 +13,7 @@ export default function JoinGame() {
       alert("Please select a game.");
       return;
     }
-    // In the future: store selected game in global state or context
-    navigate("/create-character");
+    navigate("/select-game");
   };
 
   return (

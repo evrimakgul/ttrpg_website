@@ -1,7 +1,9 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import DiceRoller from "../components/DiceRoller";
 import EditableField from "../components/EditableField";
-import { useLocation } from "react-router-dom";
+import { apiFetch } from "../lib/api";
+import { useAuth } from "../context/AuthContext";
 
 const attributes = {
   Physical: ["Strength", "Dexterity", "Stamina"],
@@ -10,92 +12,258 @@ const attributes = {
 };
 
 const skills = {
-  Physical: ["Athletics", "Brawl", "Craft", "Drive", "Firearms", "Larceny", "Melee", "Stealth", "Survival"],
-  Social: ["Animal Ken", "Etiquette", "Insight", "Intimidation", "Leadership", "Performance", "Persuasion", "Streetwise", "Subterfuge"],
-  Mental: ["Academics", "Awareness", "Finance", "Investigation", "Medicine", "Occult", "Politics", "Science", "Technology"],
+  Physical: [
+    "Athletics",
+    "Brawl",
+    "Craft",
+    "Drive",
+    "Firearms",
+    "Larceny",
+    "Melee",
+    "Stealth",
+    "Survival",
+  ],
+  Social: [
+    "Animal Ken",
+    "Etiquette",
+    "Insight",
+    "Intimidation",
+    "Leadership",
+    "Performance",
+    "Persuasion",
+    "Streetwise",
+    "Subterfuge",
+  ],
+  Mental: [
+    "Academics",
+    "Awareness",
+    "Finance",
+    "Investigation",
+    "Medicine",
+    "Occult",
+    "Politics",
+    "Science",
+    "Technology",
+  ],
+};
+
+function buildDefaultValues() {
+  const fields = {};
+  [...Object.values(attributes), ...Object.values(skills)]
+    .flat()
+    .forEach((key) => {
+      fields[key] = 1;
+    });
+  return fields;
+}
+
+const EMPTY_CHARACTER = {
+  name: "",
+  archetype: "",
+  background: "",
+  age: "",
+  race: "",
+  gender: "",
+  affiliation: "",
+  notes: "",
 };
 
 export default function CharacterSheet() {
-  const [values, setValues] = useState(() => {
-    const fields = {};
-    [...Object.values(attributes), ...Object.values(skills)].flat().forEach((key) => {
-      fields[key] = 1;
-    });
-    return fields;
-  });
+  const navigate = useNavigate();
+  const { gameId } = useParams();
+  const { user } = useAuth();
+  const [values, setValues] = useState(buildDefaultValues);
+  const [character, setCharacter] = useState(EMPTY_CHARACTER);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
 
-  const location = useLocation();
-  const character = location.state?.character;
-  const update = (field, val) => {
-    setValues((prev) => ({ ...prev, [field]: val }));
+  useEffect(() => {
+    const loadCharacter = async () => {
+      if (!gameId) {
+        setError("Missing game id.");
+        setLoading(false);
+        return;
+      }
+
+      setLoading(true);
+      setError("");
+
+      try {
+        const data = await apiFetch(`/api/games/${gameId}/characters/me`);
+        const savedCharacter = data.character;
+
+        if (savedCharacter) {
+          setCharacter({
+            name: savedCharacter.name || "",
+            archetype: savedCharacter.archetype || "",
+            background: savedCharacter.background || "",
+            age: savedCharacter.age || "",
+            race: savedCharacter.race || "",
+            gender: savedCharacter.gender || "",
+            affiliation: savedCharacter.affiliation || "",
+            notes: savedCharacter.notes || "",
+          });
+
+          if (savedCharacter.sheet_json?.values) {
+            setValues((prev) => ({
+              ...prev,
+              ...savedCharacter.sheet_json.values,
+            }));
+          }
+        }
+      } catch (err) {
+        setError(err.message || "Could not load character sheet.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadCharacter();
+  }, [gameId]);
+
+  const update = (field, value) => {
+    setValues((prev) => ({ ...prev, [field]: value }));
   };
 
-  const get = (name) => values[name] || 0;
+  const updateCharacterField = (field, value) => {
+    setCharacter((prev) => ({ ...prev, [field]: value }));
+  };
 
-  const actionPoint = get("Strength") + get("Dexterity") + get("Stamina");
-  const move = Math.round(Math.log(get("Dexterity")) * Math.log(get("Strength")) * 20);
-  const initiative = get("Dexterity") + get("Perception") + get("Charisma");
+  const strength = values.Strength || 0;
+  const dexterity = values.Dexterity || 0;
+  const stamina = values.Stamina || 0;
+  const perception = values.Perception || 0;
+  const charisma = values.Charisma || 0;
+
+  const actionPoint = strength + dexterity + stamina;
+  const move = Math.round(
+    Math.log(Math.max(dexterity, 1)) * Math.log(Math.max(strength, 1)) * 20
+  );
+  const initiative = dexterity + perception + charisma;
+
+  const saveSheet = async () => {
+    if (!gameId) {
+      setError("Missing game id.");
+      return;
+    }
+
+    if (!character.name.trim()) {
+      setError("Character name is required.");
+      return;
+    }
+
+    setSaving(true);
+    setError("");
+    setMessage("");
+
+    try {
+      await apiFetch(`/api/games/${gameId}/characters`, {
+        method: "POST",
+        body: {
+          ...character,
+          sheet_json: { values },
+        },
+      });
+
+      setMessage("Character sheet saved.");
+    } catch (err) {
+      setError(err.message || "Could not save character sheet.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="mx-auto mt-10 max-w-6xl rounded-2xl bg-white p-6 text-center text-sm shadow-md">
+        Loading character sheet...
+      </div>
+    );
+  }
 
   return (
-    <div className="max-w-6xl mx-auto mt-10 bg-white p-6 rounded-2xl shadow-md text-sm">
-      <div className="flex justify-start gap-2 mb-6">
+    <div className="mx-auto mt-10 max-w-6xl rounded-2xl bg-white p-6 text-sm shadow-md">
+      <div className="mb-6 flex justify-start gap-2">
         <button
-          onClick={() => window.location.href = "/"}
-          className="px-4 py-1 bg-gray-200 rounded"
+          onClick={() => navigate("/")}
+          className="rounded bg-gray-200 px-4 py-1"
+          type="button"
         >
-          🏠 Home
+          Home
         </button>
         <button
-          onClick={() => window.history.back()}
-          className="px-4 py-1 bg-gray-200 rounded"
+          onClick={() => navigate(-1)}
+          className="rounded bg-gray-200 px-4 py-1"
+          type="button"
         >
-          ⬅ Back
+          Back
         </button>
       </div>
-      <h2 className="text-xl font-bold mb-4 text-center">Character Sheet</h2>
-      {character && (
-        <div className="border p-4 rounded-xl mb-6 text-sm bg-gray-50">
-          <h3 className="text-md font-semibold mb-2">Character Info</h3>
-          <ul className="grid grid-cols-2 gap-x-6 gap-y-1">
-            <li><strong>Name:</strong> {character.name}</li>
-            <li><strong>Archetype:</strong> {character.archetype}</li>
-            <li><strong>Background:</strong> {character.background}</li>
-            <li><strong>Age:</strong> {character.age}</li>
-            <li><strong>Race:</strong> {character.race}</li>
-            <li><strong>Gender:</strong> {character.gender}</li>
-            <li><strong>Affiliation:</strong> {character.affiliation}</li>
-            <li><strong>Notes:</strong> {character.notes}</li>
-          </ul>
-        </div>
-      )}
 
-      {/* HEADER */}
-      <div className="border p-4 rounded-xl mb-6">
-        <div className="grid grid-cols-3 gap-4">
-          <LabeledInput label="Name" />
-          <LabeledInput label="Player" />
-          <LabeledInput label="Chronicle" />
-          <LabeledInput label="Clan" />
-          <LabeledInput label="Predator type" />
-          <LabeledInput label="Ambition" />
-          <LabeledInput label="Sect" />
-          <LabeledInput label="Rank/Title" />
-          <LabeledInput label="Desire" />
+      <h2 className="mb-4 text-center text-xl font-bold">Character Sheet</h2>
+
+      <div className="mb-6 rounded-xl border bg-gray-50 p-4 text-sm">
+        <h3 className="mb-3 text-md font-semibold">Character Info</h3>
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+          <SimpleInput
+            label="Name"
+            value={character.name}
+            onChange={(value) => updateCharacterField("name", value)}
+          />
+          <SimpleInput
+            label="Archetype"
+            value={character.archetype}
+            onChange={(value) => updateCharacterField("archetype", value)}
+          />
+          <SimpleInput
+            label="Background"
+            value={character.background}
+            onChange={(value) => updateCharacterField("background", value)}
+          />
+          <SimpleInput
+            label="Age"
+            value={character.age}
+            onChange={(value) => updateCharacterField("age", value)}
+          />
+          <SimpleInput
+            label="Race"
+            value={character.race}
+            onChange={(value) => updateCharacterField("race", value)}
+          />
+          <SimpleInput
+            label="Gender"
+            value={character.gender}
+            onChange={(value) => updateCharacterField("gender", value)}
+          />
+          <SimpleInput
+            label="Affiliation"
+            value={character.affiliation}
+            onChange={(value) => updateCharacterField("affiliation", value)}
+          />
+          <SimpleInput
+            label="Notes"
+            value={character.notes}
+            onChange={(value) => updateCharacterField("notes", value)}
+          />
         </div>
       </div>
 
-      {/* ATTRIBUTES */}
-      <div className="border p-4 rounded-xl mb-6">
-        <h3 className="text-md font-semibold mb-4 text-center">ATTRIBUTES</h3>
-        <div className="grid grid-cols-3 gap-x-20 gap-y-2">
+      <div className="mb-6 rounded-xl border p-4">
+        <h3 className="mb-4 text-center text-md font-semibold">Attributes</h3>
+        <div className="grid grid-cols-1 gap-x-20 gap-y-2 md:grid-cols-3">
           {Object.entries(attributes).map(([group, list]) => (
             <div key={group}>
-              <h4 className="text-center italic mb-2">{group}</h4>
+              <h4 className="mb-2 text-center italic">{group}</h4>
               {list.map((attr) => (
-                <div key={attr} className="grid grid-cols-2 mb-1">
+                <div key={attr} className="mb-1 grid grid-cols-2">
                   <span className="text-left">{attr}</span>
                   <div className="text-right">
-                    <EditableField value={values[attr]} onChange={(v) => update(attr, v)} />
+                    <EditableField
+                      value={values[attr]}
+                      onChange={(value) => update(attr, value)}
+                    />
                   </div>
                 </div>
               ))}
@@ -104,10 +272,9 @@ export default function CharacterSheet() {
         </div>
       </div>
 
-      {/* ACTIONS */}
-      <div className="border p-4 rounded-xl mb-6">
-        <h3 className="text-md font-semibold mb-4 text-center">ACTIONS</h3>
-        <div className="grid grid-cols-2 gap-x-20 gap-y-2">
+      <div className="mb-6 rounded-xl border p-4">
+        <h3 className="mb-4 text-center text-md font-semibold">Actions</h3>
+        <div className="grid grid-cols-1 gap-x-20 gap-y-2 md:grid-cols-2">
           <div>
             <Field label="Action Point" value={actionPoint} />
             <Field label="Combat" value={0} />
@@ -120,17 +287,20 @@ export default function CharacterSheet() {
         </div>
       </div>
 
-      {/* SKILLS */}
-      <div className="border p-4 rounded-xl mb-6">
-        <h3 className="text-md font-semibold mb-4 text-center">SKILLS</h3>
-        <div className="grid grid-cols-3 gap-x-20 gap-y-2">
+      <div className="mb-6 rounded-xl border p-4">
+        <h3 className="mb-4 text-center text-md font-semibold">Skills</h3>
+        <div className="grid grid-cols-1 gap-x-20 gap-y-2 md:grid-cols-3">
           {Object.entries(skills).map(([group, list]) => (
             <div key={group}>
+              <h4 className="mb-2 text-center italic">{group}</h4>
               {list.map((skill) => (
-                <div key={skill} className="grid grid-cols-2 mb-1">
+                <div key={skill} className="mb-1 grid grid-cols-2">
                   <span className="text-left">{skill}</span>
                   <div className="text-right">
-                    <EditableField value={values[skill]} onChange={(v) => update(skill, v)} />
+                    <EditableField
+                      value={values[skill]}
+                      onChange={(value) => update(skill, value)}
+                    />
                   </div>
                 </div>
               ))}
@@ -139,30 +309,51 @@ export default function CharacterSheet() {
         </div>
       </div>
 
-      <DiceRoller name="Player1" isDM={false} />
+      {error && <p className="mb-2 text-sm text-red-600">{error}</p>}
+      {message && <p className="mb-2 text-sm text-green-700">{message}</p>}
+
+      <button
+        onClick={saveSheet}
+        className="mb-4 w-full rounded bg-blue-100 py-2 disabled:opacity-60"
+        disabled={saving}
+        type="button"
+      >
+        {saving ? "Saving..." : "Save Character Sheet"}
+      </button>
+
+      <DiceRoller
+        gameId={gameId}
+        name={character.name || user?.email || "Player"}
+        isDM={false}
+      />
     </div>
   );
 }
 
 function Field({ label, value }) {
   return (
-    <div className="grid grid-cols-2 mb-1">
+    <div className="mb-1 grid grid-cols-2">
       <span className="text-left">{label}</span>
       <input
         type="number"
         value={value}
         readOnly
-        className="w-16 text-right p-1 text-sm border border-gray-300 rounded bg-gray-100"
+        className="w-16 rounded border border-gray-300 bg-gray-100 p-1 text-right text-sm"
       />
     </div>
   );
 }
 
-function LabeledInput({ label }) {
+function SimpleInput({ label, value, onChange }) {
   return (
     <div className="flex flex-col">
-      <label className="text-sm font-medium">{label}</label>
-      <input type="text" className="p-1 border rounded text-sm" />
+      <label className="text-xs font-medium">{label}</label>
+      <input
+        type="text"
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        className="rounded border p-2 text-sm"
+      />
     </div>
   );
 }

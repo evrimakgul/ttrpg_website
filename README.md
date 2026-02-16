@@ -1,59 +1,71 @@
 # TTRPG Website
 
-This is a web-based tabletop role-playing game (TTRPG) interface built using **React**, **Vite**, and **Node.js**, with Python integration for backend logic and automation.
+A multiplayer tabletop RPG web app with:
+- React + Vite frontend
+- Node + Express + Socket.IO backend
+- Supabase auth (email/password) and Postgres data
 
-## Features
+## What This Version Supports
+- Account signup/login
+- DM can create games
+- Invite-code join flow for players
+- Shared game + character data (no browser-only storage)
+- Realtime dice events per game room
 
-- Dynamic character sheets
-- Dice rolling components
-- Real-time socket communication
-- Modular React components
-- Clean and responsive UI
+## Project Structure
+- `src/`: React frontend
+- `server/`: Express API + Socket.IO
+- `server/supabase-schema.sql`: database schema for Supabase
+- `rulesets/`: Python prototype ruleset logic (not runtime-integrated yet)
+- `TASKS_TRACKER.md`: project backlog and issue tracker
 
-## Tech Stack
-
-- **Frontend**: React + Vite
-- **Backend**: Node.js (socket server)
-- **Python**: for automation or processing logic
-- **Others**: VS Code, Git, GitHub
-
-## Setup
-
-1. Clone the repo:
-   ```bash
-   git clone https://github.com/evrimakgul/ttrpg_website.git
-   ```
-
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-
-3. Run dev server:
-   ```bash
-   npm run dev
-   ```
-
-4. Activate Python venv (if used):
-   ```bash
-   ./venv/Scripts/activate
-   ```
-
-## Folder Structure
-
-```
-website/
-├── public/
-├── server/           # Node.js backend
-├── src/
-│   ├── components/   # React components
-│   ├── pages/        # Page-level views
-│   └── assets/
-├── venv/             # Python virtual environment
+## Local Setup
+1. Install frontend dependencies:
+```bash
+npm install
 ```
 
-## Todo
+2. Install backend dependencies:
+```bash
+cd server
+npm install
+cd ..
+```
 
-- [ ] Add user auth  
-- [ ] Enhance real-time DM-player interactions  
-- [ ] Export/import campaign data
+3. Create environment files:
+- Frontend: copy `.env.example` to `.env`
+- Backend: copy `server/.env.example` to `server/.env`
+
+4. Create Supabase tables:
+- Open Supabase SQL editor
+- Run `server/supabase-schema.sql`
+
+5. Run frontend:
+```bash
+npm run dev
+```
+
+6. Run backend in another terminal:
+```bash
+cd server
+npm run dev
+```
+
+## Environment Variables
+Frontend (`.env`):
+- `VITE_API_BASE_URL`
+- `VITE_SOCKET_URL`
+- `VITE_SUPABASE_URL`
+- `VITE_SUPABASE_ANON_KEY`
+
+Backend (`server/.env`):
+- `PORT`
+- `CORS_ORIGIN`
+- `SUPABASE_URL`
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `SUPABASE_JWT_SECRET` (optional in current code path)
+
+## Deployment Targets
+- Frontend: Vercel
+- Backend: Render
+- Database/Auth: Supabase

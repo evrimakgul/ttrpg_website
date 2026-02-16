@@ -28,7 +28,7 @@ export default function ChoiceTree() {
 
   const handleSelect = (choice) => {
     if (choice.end) {
-      navigate("/sheet");
+      navigate("/select-game");
     } else {
       setPath([...path, choice]);
     }
