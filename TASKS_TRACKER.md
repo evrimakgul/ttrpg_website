@@ -18,3 +18,4 @@ Use this file to track upcoming work and known issues.
 
 ## Done
 - [x] Hosted multiplayer foundation (auth, shared DB storage, invite-code join, scoped dice rooms).
+- [x] Persist custom rulesets and keep editing after creation (no redirect-only behavior).

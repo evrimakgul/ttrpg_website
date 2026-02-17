@@ -1,15 +1,33 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { apiFetch } from "../lib/api";
 
-const DEFAULT_RULESETS = ["Default Ruleset", "DnD 5e", "Vampire V20"];
+const BUILT_IN_RULESETS = ["Default Ruleset", "DnD 5e", "Vampire V20"];
 
 export default function SelectRuleset() {
   const navigate = useNavigate();
   const { gameId } = useParams();
   const [showList, setShowList] = useState(false);
+  const [customRulesets, setCustomRulesets] = useState([]);
+  const [loadingRulesets, setLoadingRulesets] = useState(false);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    const loadRulesets = async () => {
+      setLoadingRulesets(true);
+      try {
+        const data = await apiFetch("/api/rulesets");
+        setCustomRulesets(data.rulesets || []);
+      } catch (err) {
+        setError(err.message || "Could not load custom rulesets.");
+      } finally {
+        setLoadingRulesets(false);
+      }
+    };
+
+    loadRulesets();
+  }, []);
 
   const handleExistingSelection = async (rulesetName) => {
     if (!gameId) return;
@@ -54,25 +72,43 @@ export default function SelectRuleset() {
         <button
           onClick={() => setShowList(!showList)}
           className="w-full rounded bg-blue-100 py-2 disabled:opacity-60"
-          disabled={saving}
+          disabled={saving || loadingRulesets}
           type="button"
         >
-          Select Existing Ruleset
+          {loadingRulesets ? "Loading Rulesets..." : "Select Existing Ruleset"}
         </button>
 
         {showList && (
           <div className="mt-4 space-y-2">
-            {DEFAULT_RULESETS.map((ruleset) => (
+            {customRulesets.map((ruleset) => (
               <button
-                key={ruleset}
-                onClick={() => handleExistingSelection(ruleset)}
+                key={ruleset.id}
+                onClick={() => handleExistingSelection(ruleset.name)}
                 className="w-full rounded border px-3 py-2 text-left hover:bg-blue-50"
                 disabled={saving}
                 type="button"
               >
-                {ruleset}
+                {ruleset.name}
               </button>
             ))}
+
+            {BUILT_IN_RULESETS.map((rulesetName) => (
+              <button
+                key={rulesetName}
+                onClick={() => handleExistingSelection(rulesetName)}
+                className="w-full rounded border px-3 py-2 text-left hover:bg-blue-50"
+                disabled={saving}
+                type="button"
+              >
+                {rulesetName}
+              </button>
+            ))}
+
+            {customRulesets.length === 0 && (
+              <p className="text-xs text-gray-500">
+                No custom rulesets yet. Create one below.
+              </p>
+            )}
           </div>
         )}
       </div>

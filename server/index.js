@@ -132,6 +132,16 @@ async function getMembership(gameId, userId) {
   return data;
 }
 
+function normalizeStringList(values, fallback = []) {
+  if (!Array.isArray(values)) return fallback;
+
+  const normalized = values
+    .map((value) => String(value || "").trim())
+    .filter(Boolean);
+
+  return [...new Set(normalized)];
+}
+
 async function requireAuth(req, res, next) {
   try {
     const authHeader = req.headers.authorization || "";
@@ -561,6 +571,133 @@ app.get("/api/games/:id/characters/me", async (req, res) => {
   } catch (error) {
     console.error("Get character error:", error.message);
     return sendError(res, 500, "Could not load character.");
+  }
+});
+
+app.get("/api/rulesets", async (req, res) => {
+  try {
+    const { data: rulesets, error } = await supabase
+      .from("rulesets")
+      .select("*")
+      .eq("owner_user_id", req.user.id)
+      .order("created_at", { ascending: false });
+
+    if (error) throw error;
+
+    return res.json({ rulesets: rulesets || [] });
+  } catch (error) {
+    console.error("List rulesets error:", error.message);
+    return sendError(res, 500, "Could not list rulesets.");
+  }
+});
+
+app.post("/api/rulesets", async (req, res) => {
+  try {
+    const name = String(req.body?.name || "").trim();
+    if (!name) {
+      return sendError(res, 400, "Ruleset name is required.");
+    }
+
+    const rulesetPayload = {
+      id: crypto.randomUUID(),
+      owner_user_id: req.user.id,
+      name,
+      attributes: normalizeStringList(req.body?.attributes, [
+        "Strength",
+        "Dexterity",
+      ]),
+      skills: normalizeStringList(req.body?.skills, ["Stealth", "Insight"]),
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+
+    const { data: ruleset, error } = await supabase
+      .from("rulesets")
+      .insert(rulesetPayload)
+      .select("*")
+      .single();
+
+    if (error) {
+      if (error.code === "23505") {
+        return sendError(res, 409, "You already have a ruleset with this name.");
+      }
+      throw error;
+    }
+
+    return res.status(201).json({ ruleset });
+  } catch (error) {
+    console.error("Create ruleset error:", error.message);
+    return sendError(res, 500, "Could not create ruleset.");
+  }
+});
+
+app.get("/api/rulesets/:id", async (req, res) => {
+  try {
+    const rulesetId = req.params.id;
+    const { data: ruleset, error } = await supabase
+      .from("rulesets")
+      .select("*")
+      .eq("id", rulesetId)
+      .eq("owner_user_id", req.user.id)
+      .maybeSingle();
+
+    if (error) throw error;
+    if (!ruleset) return sendError(res, 404, "Ruleset not found.");
+
+    return res.json({ ruleset });
+  } catch (error) {
+    console.error("Get ruleset error:", error.message);
+    return sendError(res, 500, "Could not load ruleset.");
+  }
+});
+
+app.patch("/api/rulesets/:id", async (req, res) => {
+  try {
+    const rulesetId = req.params.id;
+    const updates = {};
+
+    if (typeof req.body?.name === "string") {
+      const value = req.body.name.trim();
+      if (!value) {
+        return sendError(res, 400, "Ruleset name cannot be empty.");
+      }
+      updates.name = value;
+    }
+
+    if (Array.isArray(req.body?.attributes)) {
+      updates.attributes = normalizeStringList(req.body.attributes, []);
+    }
+
+    if (Array.isArray(req.body?.skills)) {
+      updates.skills = normalizeStringList(req.body.skills, []);
+    }
+
+    if (Object.keys(updates).length === 0) {
+      return sendError(res, 400, "No valid ruleset fields provided.");
+    }
+
+    updates.updated_at = new Date().toISOString();
+
+    const { data: ruleset, error } = await supabase
+      .from("rulesets")
+      .update(updates)
+      .eq("id", rulesetId)
+      .eq("owner_user_id", req.user.id)
+      .select("*")
+      .maybeSingle();
+
+    if (error) {
+      if (error.code === "23505") {
+        return sendError(res, 409, "You already have a ruleset with this name.");
+      }
+      throw error;
+    }
+    if (!ruleset) return sendError(res, 404, "Ruleset not found.");
+
+    return res.json({ ruleset });
+  } catch (error) {
+    console.error("Update ruleset error:", error.message);
+    return sendError(res, 500, "Could not update ruleset.");
   }
 });
 

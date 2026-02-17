@@ -46,6 +46,10 @@ function App() {
               element={withAuth(<GameDashboard />)}
             />
             <Route path="/create-ruleset" element={withAuth(<CreateRuleset />)} />
+            <Route
+              path="/create-ruleset/:rulesetId"
+              element={withAuth(<CreateRuleset />)}
+            />
 
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

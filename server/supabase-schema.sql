@@ -43,6 +43,17 @@ create table if not exists characters (
   unique (game_id, user_id)
 );
 
+create table if not exists rulesets (
+  id uuid primary key,
+  owner_user_id uuid not null,
+  name text not null,
+  attributes jsonb not null default '[]'::jsonb,
+  skills jsonb not null default '[]'::jsonb,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (owner_user_id, name)
+);
+
 create or replace function set_updated_at()
 returns trigger as $$
 begin
@@ -60,5 +71,11 @@ execute function set_updated_at();
 drop trigger if exists trg_characters_updated_at on characters;
 create trigger trg_characters_updated_at
 before update on characters
+for each row
+execute function set_updated_at();
+
+drop trigger if exists trg_rulesets_updated_at on rulesets;
+create trigger trg_rulesets_updated_at
+before update on rulesets
 for each row
 execute function set_updated_at();
