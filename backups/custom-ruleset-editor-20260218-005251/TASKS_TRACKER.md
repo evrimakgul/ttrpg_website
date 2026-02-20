@@ -23,23 +23,7 @@ Use this file to track upcoming work and known issues.
   - Desired behavior: allow setting/changing/removing bonus links from existing boxes in the list/editor flow.
   - Acceptance: existing number box can be edited to change `bonusFieldId` without recreating the box.
 
-- [ ] Equipment slot restrictions + item buff automation (future activation).
-  - Current behavior: equipment editor supports text items and slot entries only.
-  - Desired behavior: enforce slot restrictions and apply item buffs automatically to the sheet.
-  - Acceptance: equipped slot items validate slot rules and update affected character fields.
-
 ## In Progress
-- [ ] GUI Layout Editor V1 (Create Ruleset + Character Sheet).
-  - Scope:
-    - Add layout metadata per box (`layout.width`, `layout.height`) in schema normalization/validation.
-    - Add `Layout Mode` in `CreateRuleset` with drag reorder, width/height presets, up/down fallback controls.
-    - Add layout-only history controls (`Undo`, `Redo`, `Reset Layout`) and keep manual `Save Draft` flow.
-    - Render custom ruleset nodes in `CharacterSheet` using saved layout width/height presets.
-  - Acceptance checkpoints:
-    - Existing rulesets without layout metadata still load and save.
-    - Section and field layout changes persist after save/reload and are reflected in `CharacterSheet`.
-    - Layout undo/redo only affects order/size edits and does not mutate other ruleset edits.
-
 - [ ] Ruleset Builder V2 rollout (hybrid editor + publish/versioning + dynamic custom sheets).
   - Scope:
     - New ruleset draft schema and published version snapshots.
@@ -60,18 +44,6 @@ Use this file to track upcoming work and known issues.
     - Create/edit/delete spell groups and spells from modal.
     - Save draft and publish version with valid spell metadata.
     - Invalid spell metadata blocks save/publish.
-
-- [ ] Ruleset Editor Section Rebuild + Powers Hierarchy + Merits/Flaws XP math.
-  - Scope:
-    - Replace generic ruleset editor UI with section-first editor cards and category dropdown.
-    - Add power-mode structure (`tiers`, `powers`, `spells`) with expandable builder workflow.
-    - Add merits/flaws boolean fields that auto-adjust XP earned/used and keep XP leftover computed.
-    - Stabilization follow-ups: save-draft fetch reliability, combat computed-field lock, power stat-linking, spell multi-target modes, and stat/skill base+bonus+current model.
-    - Add cumulative XP level-table editor for stats/skills/powers and use table math for XP spend costs.
-  - Acceptance checkpoints:
-    - Required default sections/fields render in `CreateRuleset`.
-    - Powers section respects all four tier/power mode combinations.
-    - Merits/flaws options generate XP-linked rules and lock/unlock behavior.
 
 ## Done
 - [x] Hosted multiplayer foundation (auth, shared DB storage, invite-code join, scoped dice rooms).

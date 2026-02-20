@@ -1,5 +1,4 @@
-const path = require("path");
-require("dotenv").config({ path: path.join(__dirname, ".env") });
+require("dotenv").config();
 const express = require("express");
 const http = require("http");
 const cors = require("cors");
@@ -15,19 +14,12 @@ const {
 
 const PORT = process.env.PORT || 3001;
 const CORS_ORIGIN = process.env.CORS_ORIGIN || "http://localhost:5173";
-const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const SUPABASE_PROJECT_REF = new URL(SUPABASE_URL).hostname.split(".")[0];
 
 if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
   console.error("Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY.");
-  process.exit(1);
-}
-
-let SUPABASE_PROJECT_REF = "";
-try {
-  SUPABASE_PROJECT_REF = new URL(SUPABASE_URL).hostname.split(".")[0];
-} catch {
-  console.error("SUPABASE_URL is not a valid URL.");
   process.exit(1);
 }
 
@@ -288,16 +280,6 @@ function buildStarterTemplate(seedCategories) {
     boxes: [],
     relations: [],
     rules: [],
-    xpProgression: {
-      stats: [{ level: 1, cumulative: 0 }],
-      skills: [{ level: 1, cumulative: 0 }],
-      powers: [{ level: 1, cumulative: 0 }],
-    },
-    powerConfig: {
-      useTiers: true,
-      usePowers: true,
-    },
-    powerTiers: [],
     spellGroups: [],
     spells: [],
   };
@@ -428,39 +410,6 @@ function computeXpSummary(transactions) {
   };
 }
 
-function getXpProgressionTable(schema, category) {
-  if (!schema || typeof schema !== "object" || !schema.xpProgression) return [];
-  const table = schema.xpProgression[category];
-  if (!Array.isArray(table)) return [];
-  return table
-    .map((row) => ({
-      level: Number(row?.level),
-      cumulative: Number(row?.cumulative),
-    }))
-    .filter((row) => Number.isInteger(row.level) && row.level > 0 && Number.isFinite(row.cumulative))
-    .sort((left, right) => left.level - right.level);
-}
-
-function getCumulativeXpAtLevel(table, level) {
-  if (!Number.isFinite(level)) return null;
-  if (level <= 1) return 0;
-  const normalizedLevel = Math.round(level);
-  const found = table.find((row) => row.level === normalizedLevel);
-  if (!found) return null;
-  return found.cumulative;
-}
-
-function getXpCostForLevelStep(table, fromLevel, toLevel) {
-  const fromCumulative = getCumulativeXpAtLevel(table, fromLevel);
-  const toCumulative = getCumulativeXpAtLevel(table, toLevel);
-  if (!Number.isFinite(fromCumulative) || !Number.isFinite(toCumulative)) {
-    return null;
-  }
-  const cost = toCumulative - fromCumulative;
-  if (!Number.isFinite(cost) || cost < 0) return null;
-  return cost;
-}
-
 function getCustomSchemaMeta(schemaInput) {
   const schema = normalizeRulesetSchema(schemaInput);
   const fields = schema.boxes.filter((box) => box.type === "field");
@@ -474,11 +423,7 @@ function getCustomSchemaMeta(schemaInput) {
       xpUpgradableFieldIds.add(field.id);
       xpGovernedFieldIds.add(field.id);
     }
-    if (
-      !xpPoolField &&
-      (field.fieldType === "number" || field.fieldType === "computed") &&
-      field.isXpPool
-    ) {
+    if (!xpPoolField && field.fieldType === "number" && field.isXpPool) {
       xpPoolField = field;
       xpGovernedFieldIds.add(field.id);
     }
@@ -1419,8 +1364,9 @@ app.post("/api/games/:id/characters/me/xp/spend", async (req, res) => {
       return sendError(res, 400, "field_id must target an xp-upgradable number field.");
     }
 
+    const cost = toFiniteNumber(field.xpCost, 0);
     const step = toFiniteNumber(field.xpStep, 1);
-    if (step <= 0) {
+    if (step <= 0 || cost < 0) {
       return sendError(res, 400, "XP setup is invalid for this field.");
     }
 
@@ -1428,30 +1374,14 @@ app.post("/api/games/:id/characters/me/xp/spend", async (req, res) => {
     const transactions = getCharacterTransactions(character);
     const summaryBefore = computeXpSummary(transactions);
 
+    if (summaryBefore.xp_leftover < cost) {
+      return sendError(res, 400, "Not enough XP.");
+    }
+
     const beforeValue = toFiniteNumber(values[field.id], 0);
     const afterValue = beforeValue + step;
     if (field.xpMax !== null && Number.isFinite(Number(field.xpMax)) && afterValue > Number(field.xpMax)) {
       return sendError(res, 400, `${field.label} is already at max.`);
-    }
-
-    let cost = toFiniteNumber(field.xpCost, 0);
-    if (field.xpCategory) {
-      const table = getXpProgressionTable(runtime.schema, field.xpCategory);
-      const progressionCost = getXpCostForLevelStep(table, beforeValue, afterValue);
-      if (!Number.isFinite(progressionCost)) {
-        return sendError(
-          res,
-          400,
-          `XP progression table is missing a valid entry for ${field.label} (${beforeValue} -> ${afterValue}).`
-        );
-      }
-      cost = progressionCost;
-    }
-    if (cost < 0) {
-      return sendError(res, 400, "XP setup is invalid for this field.");
-    }
-    if (summaryBefore.xp_leftover < cost) {
-      return sendError(res, 400, "Not enough XP.");
     }
 
     const transaction = normalizeXpTransaction({

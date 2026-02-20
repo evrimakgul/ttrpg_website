@@ -46,11 +46,21 @@ async function doRequest(path, { method, body, headers, token }) {
     finalHeaders.Authorization = `Bearer ${token}`;
   }
 
-  const response = await fetch(buildApiUrl(path), {
-    method,
-    headers: finalHeaders,
-    body: body ? JSON.stringify(body) : undefined,
-  });
+  const url = buildApiUrl(path);
+  let response;
+  try {
+    response = await fetch(url, {
+      method,
+      headers: finalHeaders,
+      body: body ? JSON.stringify(body) : undefined,
+    });
+  } catch (error) {
+    const networkMessage =
+      error?.message || "Network request failed.";
+    throw new Error(
+      `Cannot reach backend at ${API_BASE_URL}. ${networkMessage}`
+    );
+  }
 
   const payload = await parseResponse(response);
   return { response, payload };
